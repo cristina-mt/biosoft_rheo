@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 class Rtimedep():
-    """"
+    """
     Class with the functions relevant to time sweeps or 
     polymerisation curves.
 
@@ -27,7 +27,7 @@ class Rtimedep():
                         variables = ['sample des', 'time (sample)', 'modulus', 'force'],
                         sep = ',', dec = '.'):
 
-        """"
+        """
         Function to select the desired data from raw .csv files.
 
         INPUT:
@@ -52,7 +52,7 @@ class Rtimedep():
                         if export  = False. When export = True, the function
                         only exports the data without returning any values.
 
-        """"
+        """
 
         # Import the file as a data frame
         data_input = pd.read_csv(filename,
@@ -94,7 +94,7 @@ class Rtimedep():
                         action_header = 'Action Name', 
                         action_name = 'oscillation'):
 
-        """"
+        """
         Function to extract the time sweep data from
         a file with multiple types of measurement
 
@@ -129,7 +129,7 @@ class Rtimedep():
                         sample_header = 'Sample Description',
                         variables = ['time', 'elastic'],
                         verbose = True):
-        """"
+        """
         Function to extract the temporal variables in the data frame,
         for a given sample. The default is to extract only the 
         time and the elastic modulus.
@@ -245,7 +245,7 @@ class Rtimedep():
                         avg_window = 10, show_plot = True,
                         sample_header = 'Sample Description'):
 
-        """"
+        """
         Function to average multiple time sweeps. Note that 
         it doesn't use any interpolation, but instead, it averages
         the data points within a time window.
@@ -264,7 +264,7 @@ class Rtimedep():
             time_mean : numpy array with the average curve of time.
             yvar_mean : numpy array with the average curve of the yvariable
             yvar_std :  numpy array with the standard deviation curve of the yvariable
-        """"
+        """
 
         # Read all samples within the data frame
         all_samples = data_frame[sample_header].unique()
@@ -355,7 +355,7 @@ class Rtimedep():
     def fit_polycurve(time, modulus, exp_fit = 'single', 
                     verbose = True, show_fit = True):
 
-        """"
+        """
         Function to fit the polymerisation curve with a single
         or double exponential curve, to extract the <Go>
 
@@ -371,7 +371,7 @@ class Rtimedep():
             gp_fit_error : float, error in Go
             time_fit : float, tao extracted from fit
             time_error : float, error in tao
-        """"
+        """
 
         # Initial parameters for fit
         y0 = 0
@@ -421,7 +421,7 @@ class Rtimedep():
 
     def fitall_polycurve(file_list, save_results = True, show_fit = True,
                         sample_header = 'Sample Description'):
-        """"
+        """
         Function to fit all the polymerisation curves in multiple files
 
         INPUT
@@ -432,7 +432,7 @@ class Rtimedep():
         OUTPUT
             saves the results of the fit in a .txt file if the option is selected.
 
-        """"
+        """
 
         # Name of the file where the results will be saved. 
         # Note that it will be saved in the current working directory
@@ -469,10 +469,10 @@ class Rtimedep():
                         f.write(str2write)
 
 class FitFunction():
-    """"
+    """
     Class with the functions required to fit the time sweep
     or polymeristion curves data from rheology.
-    """"
+    """
 
     def exp_single(t, *p):
         """
