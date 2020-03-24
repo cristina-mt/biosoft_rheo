@@ -1,4 +1,4 @@
-""""
+"""
 Module to process and analyse rheology data
 containing stress ramps
 
@@ -23,7 +23,7 @@ class Rstressramp():
                         sep = ',',
                         dec = '.'):
 
-        """"
+        """
         Function to select the desired data from raw .csv files.
         TO DO: combine this and Rtimedep.readcsv_full2time to a general function
 
@@ -44,7 +44,7 @@ class Rstressramp():
             select_data : data frame with the selected data. Only returns the value
                         if export = False. When export = True, the function only 
                         exports the data without returning any values.
-        """"
+        """
 
         # Import the file as a data frame
         data_input = pd.read_csv(filename, 
@@ -57,7 +57,7 @@ class Rstressramp():
         # select only the data for the stress ramp
         # TO DO: make this selection optional for the user
 
-        data_frame = Rtimedep.splitaction_time(data_input)
+        data_frame = Rstressramp.splitaction_ramp(data_input)
 
         # Find the columns that match the desired variable names
         # and select the data within.
@@ -74,11 +74,48 @@ class Rstressramp():
         # return the data frame if export == False.
         if export == True:
             if file_export == None: 
-                file_export = filename.replace('.csv','_clean_timedep.csv')
+                file_export = filename.replace('.csv','_clean_stress_ramp.csv')
             select_data.to_csv(file_export, 
                                 index=False, 
                                 sep = sep, decimal = dec)
             print('\n Selected data exported to:', file_export)
         else:
             return select_data
+
+    def splitaction_ramp(data_frame, 
+                        action_header = 'Action Name', 
+                        action_name = 'viscometry ramp'):
+
+        """
+        Function to extract the stress ramp data from
+        a file with multiple types of measurement
+
+        INPUT
+            data_frame :    pandas data frame with the full data
+            action_header : string with the name of the column
+                            containing the type of measurement, or action,
+            action_name :   string with the name of the measurement,
+                            or action. It accepts a partial match,
+                            and is case insensitive.
+
+        OUTPUT
+            select_data :   pandas data frame containing only the
+                            stress ram[] data.
+        """
+
+        print('\n Splitting data by action name: ', action_name)
+        
+        # Gets all the actions within the data frame
+        iaction = [x for x in data_frame[action_header].unique() if action_name in x.lower()]
+
+        # Find the location of the desired action, and save to a data frame
+        # If the action name is not found, it prints an error message
+        try: 
+            select_data = data_frame.loc[(data_frame[action_header]==iaction[0])]            
+        except IndexError: 
+            print('ERROR: Action name not found') 
+            select_data = None   
+        return select_data
+
+        
         
