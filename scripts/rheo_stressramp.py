@@ -147,8 +147,8 @@ class Rstressramp():
         strain = strain[~ind_nan]
 
         # Clean the data from values after rupture, strain must be
-        # less than 10000%
-        ind_nonrupture = np.where(strain < 1e5)[0]
+        # less than 5000%
+        ind_nonrupture = np.where(strain < 5e3)[0]
         stress = stress[ind_nonrupture]
         strain = strain[ind_nonrupture]
 
@@ -220,5 +220,53 @@ class Rstressramp():
             plt.xlabel('$\gamma$ (%)')
         except IndexError: pass
 
+    def export_kall(data_frame, file_export = None,
+                    remove_neg = True,
+                    group_header = 'Sample Description',
+                    stress_header = 'Shear stress(Pa)',
+                    strain_header = 'Shear strain (sample)(%)'):
 
+        """
+        Function to compute the differential storage modulus
+        for all the data groups (e.g. samples, interals, experiments)
+        within a data_frame
+
+        INPUT
+            data_frame : pandas data frame with the full data
+            file_export : string, name of the file where data will be exported
+                        if None, it saves to 'All_k_curves.csv'
+            remove_neg : if True, removes data where strain is negative
+            group_header : string, name of the column where the data group label are.
+        OUTPUT
+            all_data : data frame with the computed stress, strain, k'
+            
+            It also saves the data_rame to file_export.
+        """
+
+        groups_all = []
+        s_all = []
+        y_all = []
+        k_all = []
+
+        for igroup in data_frame[group_header].unique():
+            data_group = data_frame.loc[data_frame[group_header] == igroup]
+            stress = np.array(data_group[stress_header])
+            strain = np.array(data_group[strain_header])
+
+            [s, y, k] = Rstressramp.compute_k(stress, strain, remove_neg = remove_neg)
+
+            groups_all.extend([igroup]*len(s))
+            s_all.extend(s)
+            y_all.extend(y)
+            k_all.extend(k)
+            
+        all_data = pd.DataFrame()
+        all_data[group_header] = groups_all
+        all_data['Stress (Pa)'] = s_all
+        all_data['Strain (%)'] = y_all
+        all_data['K prime (Pa)'] = k_all
         
+        if file_export is None: file_export = 'All_k_curves.csv'
+        all_data.to_csv(file_export, index = False)
+
+        return all_data
