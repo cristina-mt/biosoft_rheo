@@ -7,6 +7,8 @@ Author: Cristina MT
 """
 
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Rstressramp():
     """
@@ -117,5 +119,106 @@ class Rstressramp():
             select_data = None   
         return select_data
 
-        
+    def compute_k(stress, strain, show = None,
+                remove_neg = True):
+
+        """
+        Function to compute the differential storage modulus
+        from the slope of the stress vs strain curve.
+
+        INPUT
+            stress : numpy array or list, Shear Stress (in Pa) data
+            strain : numpy array or list, Shear Strain (in %) data
+            show : 'stress', 'strain', 'both', or None. Plots the result
+            remove_neg : if True, removes data where strain is negative
+        OUTPUT
+            stress : numpy array, mean value of the stress (in Pa) where k is computed
+            strain : numpy array, mean value of strain (in %) where k is computed
+            k : numpy array, differential storage modulus, (in Pa)
+        """
+
+        # Work with numpy arrays
+        stress = np.array(stress)
+        strain = np.array(strain)
+
+        # Start by cleaning the data from any NaN value
+        ind_nan = np.isnan(strain) | np.isnan(stress)
+        stress = stress[~ind_nan]
+        strain = strain[~ind_nan]
+
+        # Clean the data from values after rupture, strain must be
+        # less than 10000%
+        ind_nonrupture = np.where(strain < 1e5)[0]
+        stress = stress[ind_nonrupture]
+        strain = strain[ind_nonrupture]
+
+        # Remove data where strain is negative. Note that if recording
+        # the absolute strain of the sample, strain can be negative 
+        # in the initial interval. This data is tipically not useful 
+        # and therefore not desired.
+
+        if remove_neg == True: 
+            ind_positive = np.where(strain >= 0)
+            stress = stress[ind_positive]
+            strain = strain[ind_positive]
+
+        # Compute the differential values of strain and stress
+        diff_stress = stress[1:] - stress[:-1]
+        diff_strain = strain[1:] - strain[:-1]
+
+        # Compute k' and the mean values of stress and strain
+        k = diff_stress / diff_strain * 100  # multiplied by 100, because strain is in %
+        stress = (stress[1:] + stress[:-1])/2
+        strain = (strain[1:] + strain[:-1])/2
+
+        # Show the results if desired
+        if show == 'stress': Rstressramp.plot_k([stress], k)
+        elif show == 'strain': Rstressramp.plot_k([strain], k)
+        elif show == 'both': Rstressramp.plot_k([stress, strain], k)
+        elif show is not None: print('Error: cannot plot: ', show)
+
+        return [stress, strain, k]
+
+    def plot_k(x, k, linewidth = 1.5, 
+                marker = 'o', color = 'k', marker_facecolor = 'k'):
+
+        """
+        Function to plot, in log scale, the differential storage modulus, k
+        as a function of stress, strain, or both. 
+
+        INPUT
+            x : list of numpy arrays of dependent variables
+            k : numpy array, differential storage modulus
+            linewidth : float, width of the line to plot
+            marker : string, marker of the lineplot, needs to be compatible with
+                    matplotlib.pyplot
+            color : color for the lineplot, and marker border, needs to
+                    be compatible with matplotlib.pyplot
+            marker_facecolor : color of the marker, compatible with 
+                    matplotlib.pyplot
+        """
+
+        # Plot the first variable
+        x1 = x[0]
+        plt.figure(figsize = (9,5))
+        plt.plot(x1, k, c = color, lw = linewidth, marker = marker, 
+                mec = color, mfc = marker_facecolor)
+        plt.loglog()
+        plt.ylabel('$K\'$ (Pa)')
+
+        # If there is more than one dependent variable, 
+        # Plot also the second variable in a different figure
+        try: 
+            x2 = x[1]
+            plt.xlabel('$\sigma$ (Pa)')
+            plt.pause(0.1)
+            plt.figure(figsize =(9, 5))
+            plt.plot(x2, k, c = color, lw = linewidth, marker = marker, 
+                mec = color, mfc = marker_facecolor)
+            plt.loglog()
+            plt.ylabel('$K\'$ (Pa)')
+            plt.xlabel('$\gamma$ (%)')
+        except IndexError: pass
+
+
         
