@@ -236,10 +236,11 @@ class Rstressramp():
             file_export : string, name of the file where data will be exported
                         if None, it saves to 'All_k_curves.csv'
             remove_neg : if True, removes data where strain is negative
-            group_header : string, name of the column where the data group label are.
+            group_header : string, name of the column where the data group label are
+            stress_header : string, name of the column where the stress data is
+            strain_header : string, name of the column where the strain data is
         OUTPUT
             all_data : data frame with the computed stress, strain, k'
-            
             It also saves the data_rame to file_export.
         """
 
@@ -270,7 +271,7 @@ class Rstressramp():
         all_data.to_csv(file_export, index = False)
 
         return all_data
-    
+
     def mean_kall_interp(filename, xvariable,num_interp = 100, show_plot = True,
                         sample_header = 'Sample Description',
                         stress_header = 'Stress (Pa)',
@@ -341,11 +342,17 @@ class Rstressramp():
 
         # Plot the average curve and standard deviation, if desired
         if show_plot == True:
-            Rstressramp.plot_meank(xinterp, kmean, kstd)
+            plt.fill_between(xinterp, kmean - kstd, kmean + kstd, color = 'lightgray',
+                        alpha = 0.8)
+            plt.plot(xinterp, kmean, c = 'darkgray', marker = 'o', mfc = 'w')
+            plt.ylabel('$K\'$ (Pa)')
             plt.xlabel(xvar)
+            plt.loglog()
 
         return [xinterp, kmean, kstd]
     
+
+
     def mean_kall_window(filename, xvariable, xmin_log = -1, xmax_log = 5, winavg_number = 50,
                     show_plot = True,
                     sample_header = 'Sample Description',
@@ -426,46 +433,13 @@ class Rstressramp():
 
         # Plot the average curve and standard deviation, if desired
         if show_plot == True:
-            Rstressramp.plot_meank(xmean, kmean, kstd)
+            plt.fill_between(xmean, kmean - kstd, kmean + kstd, color = 'lightgray',
+                        alpha = 0.8)
+            plt.plot(xmean, kmean, c = 'darkgray', marker = 'o', mfc = 'w')
+            plt.ylabel('$K\'$ (Pa)')
             plt.xlabel(xvar)
+            plt.loglog()
 
         return [xmean, kmean, kstd]
-    
-    def plot_meank(xmean, kmean, kstd, color_scheme = 'gray',
-                    fig_size = (9,5), linestyle = '-', linewidth = 1, 
-                    alpha_fill = 0.8, marker = 'o', mfc = 'w', save_fig = False):
 
-        """
-        Function to plot the average curve of the time sweep.
 
-        INPUT
-            xmean : numpy array, xvariable
-            kmean : numpy array, average curve for k
-            kstd :  numpy array, standard devaition for k
-            color_scheme : string, color name used as a base for plotting
-            linestyle : string, line style to be used for the mean curve.
-                        It should match matplotlib.pyplot specs.
-            linewidth : float, line width to be used for the mean curve.
-                        It should match matplotlib.pyplot specs
-            alpha_fill : float, between [0, 1] alpha value (opacity) 
-                        to be used for the standard deviation area
-            fig_size : tuple, (width, height) for figure size
-            save_fig : if True, saves the figure. 
-                        TO DO: not implemented yet
-            marker : string, marker to be used for the mean curve, 
-                        it should match matplotlib.pyplot specs
-            mfc : string, marker face color, it should match matplotlib.pyplot
-                        specification
-        """
-
-        color_fill = 'light' + color_scheme
-        color_line = 'dark' + color_scheme        
-
-        plt.figure(figsize = fig_size)
-        
-        plt.fill_between(xmean, kmean - kstd, kmean + kstd, color = color_fill,
-                        alpha = alpha_fill)
-        plt.plot(xmean, kmean, c = color_line, ls = linestyle, lw = linewidth, 
-                    marker = marker, mec = color_line, mfc = mfc)
-        plt.ylabel('$K\'$ (Pa)')
-        plt.loglog()
