@@ -270,3 +270,78 @@ class Rstressramp():
         all_data.to_csv(file_export, index = False)
 
         return all_data
+    
+    def mean_kall_interp(filename, xvariable,num_interp = 100, show_plot = True,
+                        sample_header = 'Sample Description',
+                        stress_header = 'Stress (Pa)',
+                        strain_header = 'Strain (%)',
+                        k_header = 'K prime (Pa)',
+                        sep = ',', dec = '.'):
+
+        """
+        Function to compute the mean curve for the 
+        differential elastic modulus for all the data within a file
+        Note that it is based on interpolation!
+
+        INPUT
+            filename : string, name of the file with the whole data
+            xvariable : string, can be 'stress' or 'strain', indicating 
+                    over which variable to compute the mean.
+            show_plot : if True, shows the results in a plot
+            sample_header : string, name of the column with the sample label is
+            stress_header : string, name of the column with the shear data
+            strain_header : string, name of the column with the strain data
+            sep : string, character used as delimiter in csv file
+            dec : string, character used as decimal separator in csv file
+
+        OUTPUT
+            xinterp : numpy array, vector used for interpolation
+            kmean : numpy array, mean curve of k
+            kstd : numpy array, standard deviation curve of k
+        """         
+
+         # Read data and get all the samples within the data frame
+        data = pd.read_csv(filename, sep = sep, decimal = dec)
+        all_samples = data[sample_header].unique()
+
+        # Define which dependent variable to extract
+        if 'stress' in xvariable: xvar = stress_header
+        elif 'strain' in xvariable: xvar = strain_header
+
+        # Loop to get mean values of minimum and maximum xdata for the samples
+        xmin = []; xmax = []
+        for isample in all_samples:
+            data_sample = data.loc[data[sample_header] == isample]
+            xsample = np.array(data_sample[xvar])
+            xmin.append(np.min(xsample))
+            xmax.append(np.max(xsample))
+
+        xmin_avg = np.mean(np.array(xmin))
+        xmax_avg = np.mean(np.array(xmax))
+        xmax_std = np.std(np.array(xmax))
+
+        print('Rupture: ', xmax_avg, '+/-', xmax_std)
+        # Build interpolation vector
+        xmin_log = np.log10(xmin_avg)
+        xmax_log = np.log10(xmax_avg)
+        xinterp = np.logspace(xmin_log, xmax_log, num = num_interp)
+
+        #Loop to get the interpolated curves for each sample within the file
+        k_all = []
+        for isample in all_samples:
+            data_sample = data.loc[data[sample_header] == isample]
+            xsample = data_sample[xvar]
+            ksample = data_sample[k_header]
+            k_interp = np.interp(xinterp, xsample, ksample)
+            k_all.append(k_interp)
+            
+        k_all = np.array(k_all)
+        kmean = np.mean(k_all, axis = 0)
+        kstd = np.std(k_all, axis = 0)
+
+        # Plot the average curve and standard deviation, if desired
+        if show_plot == True:
+            Rstressramp.plot_meank(xinterp, kmean, kstd)
+            plt.xlabel(xvar)
+
+        return [xinterp, kmean, kstd]
