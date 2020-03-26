@@ -345,3 +345,88 @@ class Rstressramp():
             plt.xlabel(xvar)
 
         return [xinterp, kmean, kstd]
+    
+    def mean_kall_window(filename, xvariable, xmin_log = -1, xmax_log = 5, winavg_number = 50,
+                    show_plot = True,
+                    sample_header = 'Sample Description',
+                    stress_header = 'Stress (Pa)',
+                    strain_header = 'Strain (%)',
+                    k_header = 'K prime (Pa)',
+                    sep = ',', dec = '.'):
+
+        """
+        Function to compute the mean curve for the 
+        differential elastic modulus for all the data within a file
+        Note that it is based on window averaging, and not interpolation!
+
+        INPUT
+            filename : string, name of the file with the whole data
+            xvariable : string, can be 'stress' or 'strain', indicating 
+                    over which variable to compute the mean.
+            xmin_log : float, minimum value for average -> 10**xmin
+            xmax_log : float, minimum value for average -> 10**xmax
+            winavg_number : number of windows used to average, in logspace
+            show_plot : if True, shows the results in a plot
+            sample_header : string, name of the column with the sample label is
+            stress_header : string, name of the column with the shear data
+            strain_header : string, name of the column with the strain data
+            sep : string, character used as delimiter in csv file
+            dec : string, character used as decimal separator in csv file
+
+        OUTPUT
+            xmean : numpy array, mean value of the xvariable
+            kmean : numpy array, mean curve of k
+            kstd : numpy array, standard deviation curve of k
+        """
+
+        # Read data and get all the samples within the data frame
+        data = pd.read_csv(filename, sep = sep, decimal = dec)
+        all_samples = data[sample_header].unique()
+
+        # Define which dependent variable to extract
+        if 'stress' in xvariable: xvar = stress_header
+        elif 'strain' in xvariable: xvar = strain_header
+
+        xmean = []
+        kmean = []
+        kstd = []
+
+        # Loop to average all the curves within the window
+
+        avg_windows = np.logspace(xmin_log, xmax_log, num = winavg_number)
+        avg_windows = [round(x, 3) for x in avg_windows]
+
+        for dw in range(len(avg_windows)-1):
+            x_all = []
+            k_all = []
+            for isample in all_samples:
+                # It extracts the xvariable and the k data from the data 
+                # frame for a given sample
+                data_sample = data.loc[data[sample_header]==isample]
+                xdata = data_sample[xvar]
+                kdata = data_sample[k_header]
+                #Selects the data within the avg window and stores it
+                ind_selec = (xdata > avg_windows[dw]) & (xdata <= avg_windows[dw+1])
+                x_all.extend(xdata[ind_selec])
+                k_all.extend(kdata[ind_selec])
+            # Convert list to numpy array for mean and isnan to work properly
+            x_all = np.array(x_all)
+            k_all = np.array(k_all)
+            try:
+                # Get the mean curve, only for non values
+                xmean.append(np.mean(x_all[~np.isnan(x_all)]))
+                kmean.append(np.mean(k_all[~np.isnan(k_all)]))
+                kstd.append(np.std(k_all[~np.isnan(k_all)]))
+            except TypeError: print('Error in mean calculation')
+
+        # Convert from list to numpy array
+        xmean = np.array(xmean)
+        kmean = np.array(kmean)
+        kstd = np.array(kstd)
+
+        # Plot the average curve and standard deviation, if desired
+        if show_plot == True:
+            Rstressramp.plot_meank(xmean, kmean, kstd)
+            plt.xlabel(xvar)
+
+        return [xmean, kmean, kstd]
