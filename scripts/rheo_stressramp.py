@@ -430,3 +430,42 @@ class Rstressramp():
             plt.xlabel(xvar)
 
         return [xmean, kmean, kstd]
+    
+    def plot_meank(xmean, kmean, kstd, color_scheme = 'gray',
+                    fig_size = (9,5), linestyle = '-', linewidth = 1, 
+                    alpha_fill = 0.8, marker = 'o', mfc = 'w', save_fig = False):
+
+        """
+        Function to plot the average curve of the time sweep.
+
+        INPUT
+            xmean : numpy array, xvariable
+            kmean : numpy array, average curve for k
+            kstd :  numpy array, standard devaition for k
+            color_scheme : string, color name used as a base for plotting
+            linestyle : string, line style to be used for the mean curve.
+                        It should match matplotlib.pyplot specs.
+            linewidth : float, line width to be used for the mean curve.
+                        It should match matplotlib.pyplot specs
+            alpha_fill : float, between [0, 1] alpha value (opacity) 
+                        to be used for the standard deviation area
+            fig_size : tuple, (width, height) for figure size
+            save_fig : if True, saves the figure. 
+                        TO DO: not implemented yet
+            marker : string, marker to be used for the mean curve, 
+                        it should match matplotlib.pyplot specs
+            mfc : string, marker face color, it should match matplotlib.pyplot
+                        specification
+        """
+
+        color_fill = 'light' + color_scheme
+        color_line = 'dark' + color_scheme        
+
+        plt.figure(figsize = fig_size)
+        
+        plt.fill_between(xmean, kmean - kstd, kmean + kstd, color = color_fill,
+                        alpha = alpha_fill)
+        plt.plot(xmean, kmean, c = color_line, ls = linestyle, lw = linewidth, 
+                    marker = marker, mec = color_line, mfc = mfc)
+        plt.ylabel('$K\'$ (Pa)')
+        plt.loglog()
