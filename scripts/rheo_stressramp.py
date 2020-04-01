@@ -230,6 +230,7 @@ class Rstressramp():
     def export_kall(data_frame, file_export = None,
                     remove_neg = True,
                     group_header = 'Sample Description',
+                    subgroup_header = None,
                     stress_header = 'Shear stress(Pa)',
                     strain_header = 'Shear strain (sample)(%)'):
 
@@ -244,6 +245,7 @@ class Rstressramp():
                         if None, it saves to 'All_k_curves.csv'
             remove_neg : if True, removes data where strain is negative
             group_header : string, name of the column where the data group label are
+            subgroup_header : string, name of the column where the sub dataset label are
             stress_header : string, name of the column where the stress data is
             strain_header : string, name of the column where the strain data is
         OUTPUT
@@ -252,24 +254,38 @@ class Rstressramp():
         """
 
         groups_all = []
+        subgroups_all = []
         s_all = []
         y_all = []
         k_all = []
 
         for igroup in data_frame[group_header].unique():
             data_group = data_frame.loc[data_frame[group_header] == igroup]
-            stress = np.array(data_group[stress_header])
-            strain = np.array(data_group[strain_header])
+            try:
+                list_subgroups = data_group[subgroup_header].unique()
+                subset_header = subgroup_header
+            except KeyError: 
+                list_subgroups = [igroup]
+                subset_header = group_header
+                
+            for isubset in list_subgroups:
+                data_subgroup = data_group.loc[data_group[subset_header] == isubset]
+                stress = np.array(data_group[stress_header])
+                strain = np.array(data_group[strain_header])
 
-            [s, y, k] = Rstressramp.compute_k(stress, strain, remove_neg = remove_neg)
+                [s, y, k] = Rstressramp.compute_k(stress, strain, remove_neg = remove_neg)
 
-            groups_all.extend([igroup]*len(s))
-            s_all.extend(s)
-            y_all.extend(y)
-            k_all.extend(k)
+                groups_all.extend([igroup]*len(s))
+                subgroups_all.extend([isubset]*len(s))
+                s_all.extend(s)
+                y_all.extend(y)
+                k_all.extend(k)
             
         all_data = pd.DataFrame()
         all_data[group_header] = groups_all
+        try: subgroup_header[0]; all_data[subgroup_header] = subgroups_all
+        except TypeError: pass
+        
         all_data['Stress (Pa)'] = s_all
         all_data['Strain (%)'] = y_all
         all_data['K prime (Pa)'] = k_all
