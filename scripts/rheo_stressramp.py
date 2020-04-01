@@ -21,6 +21,7 @@ class Rstressramp():
     def readcsv_full2ramp(filename,
                         export = True,
                         file_export = None,
+                        action_name = 'viscometry ramp',
                         variables = ['sample des', 'stress', 'strain (sample)'],
                         sep = ',',
                         dec = '.'):
@@ -35,6 +36,7 @@ class Rstressramp():
             file_export : string, name of the file where the data will be exported.
                         if None, then attaches the suffix '_clean_stress_ramp'
                         to the file name.
+            action_name : string, name of the dataset where the ramp data is
             variables : list of strings, desired variables to be extracted. The 
                         name can be a partial match of the column name, and is 
                         case insensitive. If more than one column matches a given
@@ -59,7 +61,8 @@ class Rstressramp():
         # select only the data for the stress ramp
         # TO DO: make this selection optional for the user
 
-        data_frame = Rstressramp.splitaction_ramp(data_input)
+        data_frame = Rstressramp.splitaction_ramp(data_input,
+                                                  action_name = action_name)
 
         # Find the columns that match the desired variable names
         # and select the data within.
@@ -110,10 +113,14 @@ class Rstressramp():
         # Gets all the actions within the data frame
         iaction = [x for x in data_frame[action_header].unique() if action_name in x.lower()]
 
+        print(iaction)
+        data_frame.set_index(action_header, inplace = True)
+        
         # Find the location of the desired action, and save to a data frame
         # If the action name is not found, it prints an error message
-        try: 
-            select_data = data_frame.loc[(data_frame[action_header]==iaction[0])]            
+        try:
+            select_data = data_frame.loc[iaction]
+            select_data.reset_index(inplace = True)
         except IndexError: 
             print('ERROR: Action name not found') 
             select_data = None   
